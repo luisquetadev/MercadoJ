@@ -1,0 +1,12 @@
+com\produtos\dao\UserDAO.class
+com\produtos\dao\FavoriteDAO.class
+com\produtos\dao\UserDAOImpl.class
+com\produtos\dao\ProductDAO.class
+com\produtos\model\Product.class
+com\produtos\service\ProductService.class
+com\produtos\model\User.class
+com\produtos\dao\ProductDAOImpl.class
+com\produtos\controller\AuthServlet.class
+com\produtos\controller\ProductServlet.class
+com\produtos\util\DatabaseConnection.class
+com\produtos\dao\FavoriteDAOImpl.class
