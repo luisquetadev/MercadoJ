@@ -11,8 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @WebServlet(name = "ProductServlet", urlPatterns = {"/products", "/product-details", "/product-form", "/product-save", "/product-delete", "/product-favorite"})
 public class ProductServlet extends HttpServlet {
@@ -66,18 +65,24 @@ public class ProductServlet extends HttpServlet {
     private void listProducts(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<Product> products = productService.listAll();
         
-        User user = (User) request.getSession().getAttribute("user");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
         if (user != null) {
             Set<Integer> favoriteIds = productService.getFavoriteIds(user.getId());
             request.setAttribute("favoriteIds", favoriteIds);
         }
+
+        // Recuperar pilha de vistos recentemente e lista de ações
+        request.setAttribute("viewHistory", session.getAttribute("viewHistory"));
+        request.setAttribute("actionLog", session.getAttribute("actionLog"));
 
         request.setAttribute("products", products);
         request.getRequestDispatcher("/WEB-INF/jsp/product-list.jsp").forward(request, response);
     }
 
     private void toggleFavorite(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        User user = (User) request.getSession().getAttribute("user");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
         if (user == null) {
             response.sendRedirect("login");
             return;
@@ -86,6 +91,16 @@ public class ProductServlet extends HttpServlet {
         int productId = Integer.parseInt(request.getParameter("id"));
         productService.toggleFavorite(user.getId(), productId);
         
+        // --- APLICAÇÃO DE LISTA ENCADEADA (LinkedList) ---
+        // Usada para registrar um log de ações recentes onde inserções no topo são frequentes.
+        LinkedList<String> actionLog = (LinkedList<String>) session.getAttribute("actionLog");
+        if (actionLog == null) actionLog = new LinkedList<>();
+        
+        Product p = productService.findById(productId);
+        actionLog.addFirst("Favoritou: " + p.getName()); // addFirst é eficiente em LinkedList O(1)
+        if (actionLog.size() > 5) actionLog.removeLast(); // Mantém apenas os 5 últimos
+        session.setAttribute("actionLog", actionLog);
+
         String referer = request.getHeader("Referer");
         response.sendRedirect(referer != null ? referer : "products");
     }
@@ -95,6 +110,27 @@ public class ProductServlet extends HttpServlet {
         Product product = productService.findById(id);
         List<Product> suggestions = productService.getSuggestions(product);
         
+        HttpSession session = request.getSession();
+        
+        // --- APLICAÇÃO DE PILHA (Stack) ---
+        // Usada para rastrear o histórico de navegação (LIFO - Last In, First Out).
+        Stack<Product> viewHistory = (Stack<Product>) session.getAttribute("viewHistory");
+        if (viewHistory == null) viewHistory = new Stack<>();
+        
+        // Evita duplicatas consecutivas no topo da pilha
+        if (viewHistory.isEmpty() || !viewHistory.peek().getId().equals(product.getId())) {
+            viewHistory.push(product);
+        }
+        if (viewHistory.size() > 5) viewHistory.remove(0); // Limita o tamanho da pilha
+        session.setAttribute("viewHistory", viewHistory);
+
+        // Registro na Lista Encadeada
+        LinkedList<String> actionLog = (LinkedList<String>) session.getAttribute("actionLog");
+        if (actionLog == null) actionLog = new LinkedList<>();
+        actionLog.addFirst("Visualizou: " + product.getName());
+        if (actionLog.size() > 5) actionLog.removeLast();
+        session.setAttribute("actionLog", actionLog);
+
         request.setAttribute("product", product);
         request.setAttribute("suggestions", suggestions);
         request.getRequestDispatcher("/WEB-INF/jsp/product-details.jsp").forward(request, response);

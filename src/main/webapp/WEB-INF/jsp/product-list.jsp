@@ -8,8 +8,18 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
         header { background-color: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         .nav-links { display: flex; align-items: center; gap: 20px; }
-        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .main-layout { display: flex; gap: 30px; }
+        .sidebar { width: 300px; flex-shrink: 0; }
+        .content { flex-grow: 1; }
+        .sidebar-section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .sidebar-section h3 { font-size: 1rem; margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .history-list, .log-list { list-style: none; padding: 0; margin: 10px 0; font-size: 0.9rem; }
+        .history-list li, .log-list li { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .history-list li:last-child, .log-list li:last-child { border-bottom: none; }
+        .history-list a { color: #3498db; text-decoration: none; }
+        .history-list a:hover { text-decoration: underline; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; position: relative; }
         .card:hover { transform: translateY(-5px); }
         .card-img { width: 100%; height: 200px; object-fit: cover; background-color: #eee; }
@@ -67,50 +77,79 @@
         </div>
     </header>
     
-    <div class="container">
-        <c:if test="${empty products}">
-            <div style="text-align: center; padding: 50px; background: white; border-radius: 10px;">
-                <h2>Nenhum produto encontrado.</h2>
-                <c:if test="${sessionScope.user.role == 'ADMIN'}">
-                    <a href="product-form" class="btn btn-add">Cadastrar Primeiro Produto</a>
-                </c:if>
-            </div>
-        </c:if>
-        
-        <div class="grid">
-            <c:forEach var="product" items="${products}">
-                <div class="card">
-                    <c:if test="${not empty sessionScope.user}">
-                        <a href="product-favorite?id=${product.id}" class="favorite-btn">
-                            <c:choose>
-                                <c:when test="${favoriteIds.contains(product.id)}">
-                                    <i class="fas fa-star"></i>
-                                </c:when>
-                                <c:otherwise>
-                                    <i class="far fa-star"></i>
-                                </c:otherwise>
-                            </c:choose>
-                        </a>
-                    </c:if>
-                    
-                    <img src="${not empty product.imageUrl ? product.imageUrl : 'https://via.placeholder.com/400x200?text=Sem+Imagem'}" class="card-img" alt="${product.name}">
-                    <div class="card-body">
-                        <div class="card-category">${product.category}</div>
-                        <h3 class="card-title">${product.name}</h3>
-                        <div class="card-price">Kz ${product.price}</div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="product-details?id=${product.id}" class="btn btn-details">Ver Detalhes</a>
-                        <c:if test="${sessionScope.user.role == 'ADMIN'}">
-                            <div>
-                                <a href="product-form?id=${product.id}" class="btn btn-edit" title="Editar"><i class="fas fa-edit"></i></a>
-                                <a href="product-delete?id=${product.id}" class="btn btn-delete" title="Excluir" onclick="return confirm('Excluir este produto?')"><i class="fas fa-trash"></i></a>
-                            </div>
-                        </c:if>
-                    </div>
+    <div class="container main-layout">
+        <aside class="sidebar">
+            <c:if test="${not empty viewHistory}">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-history"></i> Vistos Recentemente (Pilha)</h3>
+                    <ul class="history-list">
+                        <%-- Iteramos a pilha (os mais recentes estão no topo) --%>
+                        <c:forEach var="item" items="${viewHistory}">
+                            <li><a href="product-details?id=${item.id}">${item.name}</a></li>
+                        </c:forEach>
+                    </ul>
+                    <small>Histórico (LIFO - Topo: ${viewHistory.peek().name})</small>
                 </div>
-            </c:forEach>
-        </div>
+            </c:if>
+
+            <c:if test="${not empty actionLog}">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-list-ul"></i> Log de Ações (Lista Encadeada)</h3>
+                    <ul class="log-list">
+                        <c:forEach var="log" items="${actionLog}">
+                            <li>${log}</li>
+                        </c:forEach>
+                    </ul>
+                    <small>Última: ${actionLog.getFirst()}</small>
+                </div>
+            </c:if>
+        </aside>
+
+        <main class="content">
+            <c:if test="${empty products}">
+                <div style="text-align: center; padding: 50px; background: white; border-radius: 10px;">
+                    <h2>Nenhum produto encontrado.</h2>
+                    <c:if test="${sessionScope.user.role == 'ADMIN'}">
+                        <a href="product-form" class="btn btn-add">Cadastrar Primeiro Produto</a>
+                    </c:if>
+                </div>
+            </c:if>
+            
+            <div class="grid">
+                <c:forEach var="product" items="${products}">
+                    <div class="card">
+                        <c:if test="${not empty sessionScope.user}">
+                            <a href="product-favorite?id=${product.id}" class="favorite-btn">
+                                <c:choose>
+                                    <c:when test="${favoriteIds.contains(product.id)}">
+                                        <i class="fas fa-star"></i>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <i class="far fa-star"></i>
+                                    </c:otherwise>
+                                </c:choose>
+                            </a>
+                        </c:if>
+                        
+                        <img src="${not empty product.imageUrl ? product.imageUrl : 'https://via.placeholder.com/400x200?text=Sem+Imagem'}" class="card-img" alt="${product.name}">
+                        <div class="card-body">
+                            <div class="card-category">${product.category}</div>
+                            <h3 class="card-title">${product.name}</h3>
+                            <div class="card-price">Kz ${product.price}</div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="product-details?id=${product.id}" class="btn btn-details">Ver Detalhes</a>
+                            <c:if test="${sessionScope.user.role == 'ADMIN'}">
+                                <div>
+                                    <a href="product-form?id=${product.id}" class="btn btn-edit" title="Editar"><i class="fas fa-edit"></i></a>
+                                    <a href="product-delete?id=${product.id}" class="btn btn-delete" title="Excluir" onclick="return confirm('Excluir este produto?')"><i class="fas fa-trash"></i></a>
+                                </div>
+                            </c:if>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+        </main>
     </div>
 </body>
 </html>

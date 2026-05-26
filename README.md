@@ -38,6 +38,23 @@ O sistema utiliza diversas estruturas de dados do Java Collections Framework par
     - Ao inserir os produtos da mesma categoria na fila, a estrutura organiza automaticamente o menor preço no topo. 
     - O sistema então remove (`poll`) os 3 primeiros itens, garantindo que o usuário receba sempre as sugestões mais baratas (mais atrativas) daquela categoria.
 
+### 5. `Stack` (Pilha)
+- **Onde é aplicada:** 
+    - No `ProductServlet` para gerenciar o histórico de **Produtos Vistos Recentemente**.
+- **Como funciona:** 
+    - A Pilha segue o conceito **LIFO** (Last In, First Out). 
+    - Quando um usuário visualiza os detalhes de um produto, ele é "empilhado" (`push`). 
+    - Isso permite exibir os itens na ordem inversa da visualização, onde o último item visto é o primeiro da lista de histórico. 
+    - Utilizamos o método `peek()` para verificar o topo e evitar duplicatas consecutivas.
+
+### 6. `LinkedList` (Lista Encadeada)
+- **Onde é aplicada:** 
+    - No `ProductServlet` para manter um **Log de Ações Recentes** na sessão do usuário.
+- **Como funciona:** 
+    - Diferente do ArrayList, a `LinkedList` é ideal para inserções e remoções frequentes nas extremidades. 
+    - Utilizamos `addFirst()` para inserir novas ações (como "Favoritou X" ou "Visualizou Y") no início da lista com complexidade **O(1)**. 
+    - Se a lista exceder o limite de 5 itens, removemos o último (`removeLast()`), mantendo um log leve e performático sempre atualizado com as atividades mais recentes.
+
 ---
 
 ## 🔐 Sistema de Autenticação e Perfis
