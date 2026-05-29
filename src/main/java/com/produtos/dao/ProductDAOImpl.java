@@ -20,6 +20,7 @@ public class ProductDAOImpl implements ProductDAO {
             pstmt.setString(4, product.getDescription());
             pstmt.setString(5, product.getImageUrl());
             pstmt.executeUpdate();
+            
         } catch (SQLException e) {
             e.printStackTrace();
         }

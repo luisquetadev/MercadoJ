@@ -3,6 +3,8 @@ package com.produtos.controller;
 import com.produtos.model.Product;
 import com.produtos.model.User;
 import com.produtos.service.ProductService;
+import com.produtos.structures.CustomLinkedList;
+import com.produtos.structures.ProductStack;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,7 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
-@WebServlet(name = "ProductServlet", urlPatterns = {"/products", "/product-details", "/product-form", "/product-save", "/product-delete", "/product-favorite"})
+@WebServlet(name = "ProductServlet", urlPatterns = {"/products", "/product-details", "/product-form", "/product-save", "/product-delete", "/product-favorite", "/api/search"})
 public class ProductServlet extends HttpServlet {
     private ProductService productService;
 
@@ -24,27 +26,64 @@ public class ProductServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getServletPath();
+        String path = request.getServletPath();
+        if (path == null || path.equals("/")) {
+            path = "/products";
+        }
 
-        switch (action) {
+        switch (path) {
+            case "/api/search":
+                apiSearch(request, response);
+                break;
             case "/product-details":
                 showDetails(request, response);
                 break;
             case "/product-form":
                 if (isAdmin(request)) showForm(request, response);
-                else response.sendRedirect("products");
+                else response.sendRedirect(request.getContextPath() + "/products");
                 break;
             case "/product-delete":
                 if (isAdmin(request)) deleteProduct(request, response);
-                else response.sendRedirect("products");
+                else response.sendRedirect(request.getContextPath() + "/products");
                 break;
             case "/product-favorite":
                 toggleFavorite(request, response);
                 break;
+            case "/products":
             default:
                 listProducts(request, response);
                 break;
         }
+    }
+
+    private void apiSearch(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String query = request.getParameter("search");
+        List<Product> products = productService.searchProducts(query);
+        
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        // Construção manual de JSON simples para evitar dependências externas
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < products.size(); i++) {
+            Product p = products.get(i);
+            json.append("{")
+                .append("\"id\":").append(p.getId()).append(",")
+                .append("\"name\":\"").append(escapeJson(p.getName())).append("\",")
+                .append("\"category\":\"").append(escapeJson(p.getCategory())).append("\",")
+                .append("\"price\":").append(p.getPrice()).append(",")
+                .append("\"imageUrl\":\"").append(p.getImageUrl() != null ? escapeJson(p.getImageUrl()) : "").append("\"")
+                .append("}");
+            if (i < products.size() - 1) json.append(",");
+        }
+        json.append("]");
+        
+        response.getWriter().write(json.toString());
+    }
+
+    private String escapeJson(String str) {
+        if (str == null) return "";
+        return str.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
     @Override
@@ -63,7 +102,25 @@ public class ProductServlet extends HttpServlet {
     }
 
     private void listProducts(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<Product> products = productService.listAll();
+        String query = request.getParameter("search");
+        String category = request.getParameter("category");
+        List<Product> products;
+        
+        // --- APLICAÇÃO DE ÁRVORE BINÁRIA DE BUSCA (BST) ---
+        // A BST permite buscar por nome ou filtrar por categoria com complexidade O(log n).
+        // Isso é muito mais eficiente do que percorrer uma lista do banco de dados manualmente.
+        if (query != null && !query.trim().isEmpty()) {
+            products = productService.searchProducts(query);
+            request.setAttribute("searchQuery", query);
+        } else if (category != null && !category.trim().isEmpty() && !category.equals("all")) {
+            products = productService.filterProductsByCategory(category);
+            request.setAttribute("selectedCategory", category);
+        } else {
+            products = productService.listAll();
+        }
+        
+        // Lista de categorias para o filtro
+        request.setAttribute("categories", productService.getAllCategories());
         
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
@@ -72,9 +129,23 @@ public class ProductServlet extends HttpServlet {
             request.setAttribute("favoriteIds", favoriteIds);
         }
 
-        // Recuperar pilha de vistos recentemente e lista de ações
-        request.setAttribute("viewHistory", session.getAttribute("viewHistory"));
-        request.setAttribute("actionLog", session.getAttribute("actionLog"));
+        // --- MANIPULAÇÃO DA PILHA (STACK) E LISTA ENCADEADA ---
+        // Recuperamos as estruturas da sessão. Elas foram implementadas do zero
+        // para demonstrar o uso de ponteiros e alocação dinâmica.
+        ProductStack<Product> viewHistory = (ProductStack<Product>) session.getAttribute("viewHistory");
+        if (viewHistory != null) {
+            // Usamos o método toList() para que o JSTL consiga iterar os dados no JSP.
+            request.setAttribute("viewHistory", viewHistory.toList());
+            // Operação PEEK (TOP): Visualizamos o elemento do topo sem remover.
+            request.setAttribute("topHistory", viewHistory.peek());
+        }
+
+        CustomLinkedList<String> actionLog = (CustomLinkedList<String>) session.getAttribute("actionLog");
+        if (actionLog != null) {
+            request.setAttribute("actionLog", actionLog.toList());
+            // Operação GETFIRST: Em listas encadeadas, o acesso ao primeiro nó é O(1).
+            request.setAttribute("topAction", actionLog.getFirst());
+        }
 
         request.setAttribute("products", products);
         request.getRequestDispatcher("/WEB-INF/jsp/product-list.jsp").forward(request, response);
@@ -91,14 +162,15 @@ public class ProductServlet extends HttpServlet {
         int productId = Integer.parseInt(request.getParameter("id"));
         productService.toggleFavorite(user.getId(), productId);
         
-        // --- APLICAÇÃO DE LISTA ENCADEADA (LinkedList) ---
-        // Usada para registrar um log de ações recentes onde inserções no topo são frequentes.
-        LinkedList<String> actionLog = (LinkedList<String>) session.getAttribute("actionLog");
-        if (actionLog == null) actionLog = new LinkedList<>();
+        // --- INSERÇÃO NA LISTA ENCADEADA ---
+        CustomLinkedList<String> actionLog = (CustomLinkedList<String>) session.getAttribute("actionLog");
+        if (actionLog == null) actionLog = new CustomLinkedList<>();
         
         Product p = productService.findById(productId);
-        actionLog.addFirst("Favoritou: " + p.getName()); // addFirst é eficiente em LinkedList O(1)
-        if (actionLog.size() > 5) actionLog.removeLast(); // Mantém apenas os 5 últimos
+        // Operação ADDFIRST: Adiciona no início da lista (ponteiro head).
+        actionLog.addFirst("Favoritou: " + p.getName());
+        // Se a lista crescer muito, removemos o último nó (ponteiro last traversal).
+        if (actionLog.size() > 5) actionLog.removeLast(); 
         session.setAttribute("actionLog", actionLog);
 
         String referer = request.getHeader("Referer");
@@ -112,21 +184,22 @@ public class ProductServlet extends HttpServlet {
         
         HttpSession session = request.getSession();
         
-        // --- APLICAÇÃO DE PILHA (Stack) ---
-        // Usada para rastrear o histórico de navegação (LIFO - Last In, First Out).
-        Stack<Product> viewHistory = (Stack<Product>) session.getAttribute("viewHistory");
-        if (viewHistory == null) viewHistory = new Stack<>();
+        // --- INSERÇÃO NA PILHA (STACK) ---
+        ProductStack<Product> viewHistory = (ProductStack<Product>) session.getAttribute("viewHistory");
+        if (viewHistory == null) viewHistory = new ProductStack<>();
         
-        // Evita duplicatas consecutivas no topo da pilha
+        // Operação PEEK para evitar duplicatas consecutivas.
         if (viewHistory.isEmpty() || !viewHistory.peek().getId().equals(product.getId())) {
+            // Operação PUSH: Adiciona o novo produto no topo da pilha.
             viewHistory.push(product);
         }
-        if (viewHistory.size() > 5) viewHistory.remove(0); // Limita o tamanho da pilha
+        // Mantemos a pilha com tamanho limitado para o histórico.
+        if (viewHistory.size() > 5) viewHistory.removeBottom();
         session.setAttribute("viewHistory", viewHistory);
 
-        // Registro na Lista Encadeada
-        LinkedList<String> actionLog = (LinkedList<String>) session.getAttribute("actionLog");
-        if (actionLog == null) actionLog = new LinkedList<>();
+        // Registro na Lista Encadeada Customizada
+        CustomLinkedList<String> actionLog = (CustomLinkedList<String>) session.getAttribute("actionLog");
+        if (actionLog == null) actionLog = new CustomLinkedList<>();
         actionLog.addFirst("Visualizou: " + product.getName());
         if (actionLog.size() > 5) actionLog.removeLast();
         session.setAttribute("actionLog", actionLog);

@@ -83,12 +83,11 @@
                 <div class="sidebar-section">
                     <h3><i class="fas fa-history"></i> Vistos Recentemente (Pilha)</h3>
                     <ul class="history-list">
-                        <%-- Iteramos a pilha (os mais recentes estão no topo) --%>
                         <c:forEach var="item" items="${viewHistory}">
                             <li><a href="product-details?id=${item.id}">${item.name}</a></li>
                         </c:forEach>
                     </ul>
-                    <small>Histórico (LIFO - Topo: ${viewHistory.peek().name})</small>
+                    <small>Histórico (LIFO - Topo: ${topHistory.name})</small>
                 </div>
             </c:if>
 
@@ -100,12 +99,38 @@
                             <li>${log}</li>
                         </c:forEach>
                     </ul>
-                    <small>Última: ${actionLog.getFirst()}</small>
+                    <small>Última: ${topAction}</small>
                 </div>
             </c:if>
         </aside>
 
         <main class="content">
+            <div style="margin-bottom: 25px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <form action="products" method="GET" style="display: flex; gap: 10px; margin: 0; flex-wrap: wrap;">
+                    <div style="flex-grow: 1; position: relative; min-width: 300px;">
+                        <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #7f8c8d;"></i>
+                        <input type="text" name="search" value="${searchQuery}" placeholder="Pesquisar produtos (Busca em Árvore BST)..." 
+                               style="width: 100%; padding: 12px 12px 12px 45px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 1rem;">
+                    </div>
+                    
+                    <select name="category" onchange="this.form.submit()" 
+                            style="padding: 10px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none; background: white; cursor: pointer;">
+                        <option value="all">Todas as Categorias</option>
+                        <c:forEach var="cat" items="${categories}">
+                            <option value="${cat}" ${selectedCategory == cat ? 'selected' : ''}>${cat}</option>
+                        </c:forEach>
+                    </select>
+
+                    <button type="submit" class="btn btn-details" style="padding: 0 25px; border-radius: 25px;">Buscar</button>
+                    <c:if test="${not empty searchQuery or (not empty selectedCategory and selectedCategory != 'all')}">
+                        <a href="products" class="btn btn-logout" style="line-height: 40px;">Limpar</a>
+                    </c:if>
+                </form>
+                <div style="margin-top: 10px; font-size: 0.85rem; color: #7f8c8d;">
+                    <i class="fas fa-info-circle"></i> A busca e o filtro por categoria utilizam a <strong>Árvore Binária de Busca (BST)</strong> para maior performance.
+                </div>
+            </div>
+
             <c:if test="${empty products}">
                 <div style="text-align: center; padding: 50px; background: white; border-radius: 10px;">
                     <h2>Nenhum produto encontrado.</h2>
@@ -115,7 +140,7 @@
                 </div>
             </c:if>
             
-            <div class="grid">
+            <div class="grid" id="product-grid">
                 <c:forEach var="product" items="${products}">
                     <div class="card">
                         <c:if test="${not empty sessionScope.user}">
@@ -151,5 +176,64 @@
             </div>
         </main>
     </div>
+
+    <script>
+        const searchInput = document.querySelector('input[name="search"]');
+        const productGrid = document.getElementById('product-grid');
+        const userRole = '${sessionScope.user.role}';
+        const favoriteIds = [
+            <c:forEach var="id" items="${favoriteIds}" varStatus="status">
+                ${id}${not status.last ? ',' : ''}
+            </c:forEach>
+        ];
+
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value;
+            
+            fetch(`api/search?search=\${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(products => {
+                    renderProducts(products);
+                })
+                .catch(err => console.error('Erro na busca:', err));
+        });
+
+        function renderProducts(products) {
+            if (products.length === 0) {
+                productGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: white; border-radius: 10px;">
+                        <h2>Nenhum produto encontrado para esta busca.</h2>
+                    </div>
+                `;
+                return;
+            }
+
+            productGrid.innerHTML = products.map(p => `
+                <div class="card">
+                    \${userRole ? `
+                        <a href="product-favorite?id=\${p.id}" class="favorite-btn">
+                            <i class="\${favoriteIds.includes(p.id) ? 'fas' : 'far'} fa-star"></i>
+                        </a>
+                    ` : ''}
+                    
+                    <img src="\${p.imageUrl || 'https://via.placeholder.com/400x200?text=Sem+Imagem'}" class="card-img" alt="\${p.name}">
+                    <div class="card-body">
+                        <div class="card-category">\${p.category}</div>
+                        <h3 class="card-title">\${p.name}</h3>
+                        <div class="card-price">Kz \${p.price}</div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="product-details?id=\${p.id}" class="btn btn-details">Ver Detalhes</a>
+                        \${userRole === 'ADMIN' ? `
+                            <div>
+                                <a href="product-form?id=\${p.id}" class="btn btn-edit" title="Editar"><i class="fas fa-edit"></i></a>
+                                <a href="product-delete?id=\${p.id}" class="btn btn-delete" title="Excluir" onclick="return confirm('Excluir este produto?')"><i class="fas fa-trash"></i></a>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
 </body>
 </html>

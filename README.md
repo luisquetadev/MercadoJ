@@ -1,90 +1,54 @@
-# Mercado Java - Sistema de Sugestões e Favoritos
+# Sistema de Recomendação de Produtos - Mercado J
 
-Este projeto é uma aplicação Java Web (Jakarta EE) para gerenciamento de produtos, apresentando um sistema de autenticação, favoritos e sugestões inteligentes baseadas em estruturas de dados clássicas.
+Este projeto é um sistema de recomendação de produtos desenvolvido em Java (Servlet/JSP) que demonstra a aplicação prática de diversas estruturas de dados fundamentais.
 
 ## 🚀 Estruturas de Dados Aplicadas
 
-O sistema utiliza diversas estruturas de dados do Java Collections Framework para otimizar a lógica de negócio, especialmente no serviço de sugestões e na gestão de favoritos.
+O sistema foi refatorado para utilizar implementações personalizadas de estruturas de dados, localizadas no pacote `com.produtos.structures`, para demonstrar conceitos de algoritmos e ponteiros.
 
-### 1. `List` (ArrayList)
-- **Onde é aplicada:** 
-    - No `ProductDAO` e `ProductService` para retornar todos os produtos do banco de dados.
-    - No `FavoriteDAO` para listar os IDs dos produtos favoritos.
-- **Como funciona:** 
-    - A `List` é utilizada quando a ordem de inserção é importante ou quando precisamos de acesso indexado. É a estrutura ideal para exibir grades de produtos onde os dados são lidos sequencialmente do banco de dados.
+### 1. Árvore Binária de Busca (BST - Binary Search Tree)
+- **Onde é usada:** No sistema de busca e filtragem de produtos.
+- **Implementação:** `ProductBST.java`.
+- **Filtro por Categoria:** Além da busca por nome, a árvore agora suporta filtragem por categoria, percorrendo os nós de forma otimizada para agrupar produtos do mesmo tipo.
 
-### 2. `Map` (HashMap)
-- **Onde é aplicada:** 
-    - No método `getSuggestions` da classe `ProductService`.
-- **Como funciona:** 
-    - Utilizamos `Map<String, List<Product>>` para realizar um **agrupamento por categoria**. 
-    - A chave do mapa é a `categoria` (String) e o valor é uma lista de produtos pertencentes a essa categoria. 
-    - Isso permite que o sistema recupere instantaneamente todos os produtos de uma categoria específica sem precisar percorrer a lista completa de produtos várias vezes, otimizando a busca de itens relacionados.
+### 2. Pilha (Stack - LIFO)
+- **Onde é usada:** Histórico de "Vistos Recentemente".
+- **Implementação:** `ProductStack.java`.
+- **Operações Fundamentais:** Implementa e utiliza explicitamente `push()` (adicionar ao topo), `pop()` (remover do topo), `peek()` (visualizar topo) e `isEmpty()` (verificar se está vazia).
 
-### 3. `Set` (HashSet)
-- **Onde é aplicada:** 
-    - No método `getSuggestions` para filtrar duplicatas.
-    - No `ProductServlet` para gerenciar os `favoriteIds` do usuário logado.
-- **Como funciona:** 
-    - **Unicidade:** No sistema de sugestões, o `Set` garante que o produto principal que o usuário está visualizando não apareça na lista de sugestões, evitando redundância.
-    - **Performance de Busca:** Para os favoritos, usamos um `Set<Integer>`. Como o `HashSet` possui complexidade média de **O(1)** para a operação `contains()`, a verificação se um produto deve exibir a estrela preenchida ou vazia na interface é extremamente rápida, mesmo com muitos favoritos.
+### 3. Lista Encadeada (Linked List)
+- **Onde é usada:** Log de Ações Recentes.
+- **Implementação:** `CustomLinkedList.java`.
+- **Conceito:** Uma lista dinâmica onde cada elemento aponta para o próximo. É ideal para o log de ações pois permite inserções no início (O(1)) de forma extremamente rápida.
+- **Ponteiros:** Cada ação registrada é um nó que contém a descrição da ação e um "ponteiro" para a ação anterior.
 
-### 4. `PriorityQueue` (Heap)
-- **Onde é aplicada:** 
-    - No método `getSuggestions` para classificar as melhores "oportunidades" (menores preços).
-- **Como funciona:** 
-    - A `PriorityQueue` funciona como um **Min-Heap**. 
-    - Configuramos um comparador baseado no preço (`Comparator.comparingDouble(Product::getPrice)`). 
-    - Ao inserir os produtos da mesma categoria na fila, a estrutura organiza automaticamente o menor preço no topo. 
-    - O sistema então remove (`poll`) os 3 primeiros itens, garantindo que o usuário receba sempre as sugestões mais baratas (mais atrativas) daquela categoria.
-
-### 5. `Stack` (Pilha)
-- **Onde é aplicada:** 
-    - No `ProductServlet` para gerenciar o histórico de **Produtos Vistos Recentemente**.
-- **Como funciona:** 
-    - A Pilha segue o conceito **LIFO** (Last In, First Out). 
-    - Quando um usuário visualiza os detalhes de um produto, ele é "empilhado" (`push`). 
-    - Isso permite exibir os itens na ordem inversa da visualização, onde o último item visto é o primeiro da lista de histórico. 
-    - Utilizamos o método `peek()` para verificar o topo e evitar duplicatas consecutivas.
-
-### 6. `LinkedList` (Lista Encadeada)
-- **Onde é aplicada:** 
-    - No `ProductServlet` para manter um **Log de Ações Recentes** na sessão do usuário.
-- **Como funciona:** 
-    - Diferente do ArrayList, a `LinkedList` é ideal para inserções e remoções frequentes nas extremidades. 
-    - Utilizamos `addFirst()` para inserir novas ações (como "Favoritou X" ou "Visualizou Y") no início da lista com complexidade **O(1)**. 
-    - Se a lista exceder o limite de 5 itens, removemos o último (`removeLast()`), mantendo um log leve e performático sempre atualizado com as atividades mais recentes.
-
----
-
-## 🔐 Sistema de Autenticação e Perfis
-
-O sistema distingue entre dois tipos de usuários:
-
-1.  **Administrador (ADMIN):**
-    *   Pode cadastrar novos produtos.
-    *   Pode editar e excluir produtos existentes.
-    *   Pode favoritar produtos.
-2.  **Usuário (USER):**
-    *   Pode visualizar produtos e detalhes.
-    *   Pode favoritar produtos para sua lista pessoal.
-    *   **Não** tem acesso aos botões de edição, exclusão ou ao formulário de cadastro.
-
-**Credenciais de Teste:**
-- **Admin:** `admin` / `admin`
-- **User:** `user` / `user`
-
----
-
-## 🇦🇴 Localização
-- A moeda do sistema foi configurada para **Kwanza (Kz)**, refletindo o mercado angolano.
-- Interface responsiva com suporte a ícones (Font Awesome) para uma experiência de usuário moderna.
+### 4. Ponteiros e Referências
+- **Demonstração:** Todas as estruturas acima (`BST`, `Stack`, `LinkedList`) foram construídas do zero utilizando a classe `Node.java`.
+- **Aplicação:** Em Java, "ponteiros" são as referências de objetos. Ao definir `Node next;` ou `TreeNode left, right;`, estamos utilizando ponteiros para criar estruturas de dados dinâmicas na memória Heap.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
+
 - **Linguagem:** Java 17+
-- **Framework:** Jakarta EE (Servlets, JSP, JSTL)
-- **Banco de Dados:** MySQL
-- **Frontend:** HTML5, CSS3, JavaScript e Font Awesome
-- **Gerenciador de Dependências:** Maven
+- **Web:** Jakarta Servlet 6.0, JSP (JavaServer Pages)
+- **Banco de Dados:** MySQL (com `DatabaseConnection` utilitário)
+- **Estilização:** CSS3 e FontAwesome para ícones.
+- **Build:** Maven
+
+## 📂 Estrutura do Pacote de Dados
+
+```text
+src/main/java/com/produtos/structures/
+├── Node.java               <-- A base de tudo (Ponteiros/Referências)
+├── ProductBST.java         <-- Árvore para Busca e Filtragem
+├── ProductStack.java       <-- Pilha para Histórico (LIFO)
+└── CustomLinkedList.java   <-- Lista Encadeada para Logs
+```
+
+## 💻 Como Rodar
+
+1. Certifique-se de ter o MySQL instalado e configure os dados em `DatabaseConnection.java`.
+2. Execute o script `schema.sql` (em `resources`) para criar as tabelas.
+3. Compile o projeto com `mvn clean package`.
+4. Faça o deploy do `.war` em um servidor Tomcat 10+.
