@@ -5,16 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Árvore Binária de Busca (BST - Binary Search Tree).
+ * ESTRUTURA: Árvore Binária de Busca (Binary Search Tree - BST)
+ * CONCEITO: Estrutura hierárquica onde cada nó tem no máximo dois filhos (Esq < Raiz < Dir).
+ * APLICAÇÃO NO PROJETO: Motor de busca e filtragem de produtos por nome e categoria.
  * 
- * CONCEITO:
- * Cada nó tem no máximo dois filhos. Para qualquer nó:
- * - O filho à esquerda é MENOR.
- * - O filho à direita é MAIOR.
- * 
- * COMPLEXIDADE:
- * - Busca/Inserção: O(log n) em média. 
- * É muito mais rápido que buscar em uma lista (O(n)).
+ * Por que usar: Oferece performance de busca O(log n), sendo muito superior 
+ * a uma busca linear em listas grandes. Mantém os dados naturalmente ordenados.
  */
 public class ProductBST {
     

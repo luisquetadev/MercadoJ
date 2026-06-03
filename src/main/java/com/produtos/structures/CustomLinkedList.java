@@ -5,11 +5,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Implementação de Lista Encadeada Simples.
+ * ESTRUTURA: Lista Encadeada Simples (Custom Linked List)
+ * CONCEITO: Coleção linear de elementos onde a ordem não é dada pelo posicionamento físico na memória.
+ * APLICAÇÃO NO PROJETO: Utilizada para gerenciar o Log de Ações (Ex: "Produto Favoritado").
  * 
- * CONCEITO:
- * Cada elemento conhece apenas o próximo. É uma estrutura dinâmica,
- * não precisamos definir o tamanho no início (diferente de um Array).
+ * Por que usar: Permite inserções rápidas no início (O(1)) e cresce dinamicamente 
+ * conforme o usuário realiza ações no sistema.
  */
 public class CustomLinkedList<T> implements Iterable<T>, Serializable {
     private static final long serialVersionUID = 1L;

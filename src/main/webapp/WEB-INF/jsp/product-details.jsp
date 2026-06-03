@@ -56,7 +56,13 @@
     </header>
 
     <div class="container">
-        <a href="products" class="back-btn">&larr; Voltar ao Catálogo</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <a href="products" class="back-btn">&larr; Voltar ao Catálogo</a>
+            <div style="background: #e8f4fd; padding: 10px 20px; border-radius: 10px; border-left: 5px solid #3498db; font-size: 0.9rem;">
+                <i class="fas fa-microchip"></i> <strong>Operações Ativas:</strong> 
+                <code>stack.push()</code> | <code>list.addFirst()</code> | <code>stack.peek()</code>
+            </div>
+        </div>
         
         <div class="product-header">
             <img src="${not empty product.imageUrl ? product.imageUrl : 'https://via.placeholder.com/400?text=Sem+Imagem'}" class="product-image">

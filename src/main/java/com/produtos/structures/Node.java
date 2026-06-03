@@ -3,12 +3,12 @@ package com.produtos.structures;
 import java.io.Serializable;
 
 /**
- * Representa um nó genérico que é a unidade fundamental de estruturas dinâmicas.
+ * ESTRUTURA: Nó (Node)
+ * CONCEITO: Unidade básica de memória para estruturas dinâmicas.
+ * APLICAÇÃO NO PROJETO: Serve como base para a Lista Encadeada, Pilha e Fila.
  * 
- * CONCEITO DE PONTEIROS:
- * Em linguagens como C, usamos ponteiros de memória. Em Java, usamos referências de objetos.
- * O atributo 'next' é um "ponteiro" que guarda o endereço de memória do próximo nó,
- * permitindo criar uma cadeia (lista) que pode crescer indefinidamente.
+ * Descrição: Cada nó armazena um dado (T data) e uma referência (ponteiro) 
+ * para o próximo elemento da sequência, permitindo o encadeamento dinâmico.
  */
 public class Node<T> implements Serializable {
     private static final long serialVersionUID = 1L;

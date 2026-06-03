@@ -20,10 +20,14 @@ O sistema foi refatorado para utilizar implementações personalizadas de estrut
 - **Onde é usada:** Log de Ações Recentes.
 - **Implementação:** `CustomLinkedList.java`.
 - **Conceito:** Uma lista dinâmica onde cada elemento aponta para o próximo. É ideal para o log de ações pois permite inserções no início (O(1)) de forma extremamente rápida.
-- **Ponteiros:** Cada ação registrada é um nó que contém a descrição da ação e um "ponteiro" para a ação anterior.
 
-### 4. Ponteiros e Referências
-- **Demonstração:** Todas as estruturas acima (`BST`, `Stack`, `LinkedList`) foram construídas do zero utilizando a classe `Node.java`.
+### 4. Fila (Queue - FIFO)
+- **Onde é usada:** Histórico de Pesquisas Recentes.
+- **Implementação:** `ProductQueue.java`.
+- **Conceito:** O primeiro item a ser pesquisado é o primeiro a ser mantido, garantindo a ordem cronológica das buscas do usuário.
+
+### 5. Ponteiros e Referências
+- **Demonstração:** Todas as estruturas acima (`BST`, `Stack`, `LinkedList`, `Queue`) foram construídas do zero utilizando a classe `Node.java`.
 - **Aplicação:** Em Java, "ponteiros" são as referências de objetos. Ao definir `Node next;` ou `TreeNode left, right;`, estamos utilizando ponteiros para criar estruturas de dados dinâmicas na memória Heap.
 
 ---
@@ -43,6 +47,7 @@ src/main/java/com/produtos/structures/
 ├── Node.java               <-- A base de tudo (Ponteiros/Referências)
 ├── ProductBST.java         <-- Árvore para Busca e Filtragem
 ├── ProductStack.java       <-- Pilha para Histórico (LIFO)
+├── ProductQueue.java       <-- Fila para Pesquisas (FIFO)
 └── CustomLinkedList.java   <-- Lista Encadeada para Logs
 ```
 

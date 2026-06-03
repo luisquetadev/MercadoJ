@@ -5,13 +5,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Implementação personalizada de uma Pilha (Stack).
+ * ESTRUTURA: Pilha (Stack)
+ * CONCEITO: LIFO (Last-In, First-Out) - O último a entrar é o primeiro a sair.
+ * APLICAÇÃO NO PROJETO: Histórico de Produtos Visualizados Recentemente.
  * 
- * CONCEITO LIFO (Last-In, First-Out):
- * O último elemento a entrar é o primeiro a sair. Imagine uma pilha de pratos.
- * 
- * COMPLEXIDADE:
- * - Push/Pop: O(1) - Operações no topo são instantâneas.
+ * Por que usar: Ideal para navegação reversa, onde o último item visitado 
+ * deve ser o primeiro a ser exibido no topo da lista de histórico.
  */
 public class ProductStack<T> implements Iterable<T>, Serializable {
     private static final long serialVersionUID = 1L;

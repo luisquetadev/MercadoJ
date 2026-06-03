@@ -79,27 +79,62 @@
     
     <div class="container main-layout">
         <aside class="sidebar">
+            <div class="sidebar-section" style="background: #2c3e50; color: white;">
+                <h3><i class="fas fa-flask"></i> Lab de Estruturas</h3>
+                <div style="font-size: 0.85rem; line-height: 1.4;">
+                    <p><strong>BST (Busca):</strong> Usa <code>insert()</code> para montar e <code>search()</code> para encontrar em O(log n).</p>
+                    <p><strong>Pilha (History):</strong> <code>push()</code> insere no topo, <code>peek()</code> olha o topo sem tirar.</p>
+                    <p><strong>Fila (Buscas):</strong> <code>enqueue()</code> entra no fim, <code>dequeue()</code> sai no início.</p>
+                    <p><strong>Lista (Logs):</strong> <code>addFirst()</code> insere no início em O(1).</p>
+                    <p><strong>Nós:</strong> Todas usam <code>Node.next</code> para apontar ao próximo item.</p>
+                </div>
+            </div>
+
+            <c:if test="${not empty recentSearches}">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-search"></i> Buscas Recentes (Fila)</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                        <c:forEach var="query" items="${recentSearches}">
+                            <div style="background: #e1f5fe; color: #0288d1; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; border: 1px solid #b3e5fc;">
+                                <a href="products?search=${query}" style="color: inherit; text-decoration: none; font-weight: 500;">${query}</a>
+                                <a href="remove-search?query=${query}" style="color: #e74c3c; text-decoration: none; font-weight: bold; font-size: 1.1rem; line-height: 1;" title="Remover (Método remove())">&times;</a>
+                            </div>
+                        </c:forEach>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 0.8rem; color: #7f8c8d;">
+                        <i class="fas fa-exchange-alt"></i> <strong>FIFO:</strong> Operação <code>enqueue()</code> ativa. <br>
+                        <code>isEmpty()</code>: ${empty recentSearches ? 'Sim' : 'Não'}
+                    </div>
+                </div>
+            </c:if>
+
             <c:if test="${not empty viewHistory}">
                 <div class="sidebar-section">
-                    <h3><i class="fas fa-history"></i> Vistos Recentemente (Pilha)</h3>
+                    <h3><i class="fas fa-history"></i> Vistos (Pilha)</h3>
                     <ul class="history-list">
                         <c:forEach var="item" items="${viewHistory}">
                             <li><a href="product-details?id=${item.id}">${item.name}</a></li>
                         </c:forEach>
                     </ul>
-                    <small>Histórico (LIFO - Topo: ${topHistory.name})</small>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">
+                        <i class="fas fa-layer-group"></i> <strong>LIFO:</strong> <code>top</code> = ${topHistory.name} <br>
+                        <code>peek()</code> realizado com sucesso.
+                    </div>
                 </div>
             </c:if>
 
             <c:if test="${not empty actionLog}">
                 <div class="sidebar-section">
-                    <h3><i class="fas fa-list-ul"></i> Log de Ações (Lista Encadeada)</h3>
+                    <h3><i class="fas fa-list-ul"></i> Log (Lista Encadeada)</h3>
                     <ul class="log-list">
                         <c:forEach var="log" items="${actionLog}">
                             <li>${log}</li>
                         </c:forEach>
                     </ul>
-                    <small>Última: ${topAction}</small>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">
+                        <i class="fas fa-link"></i> <strong>Ponteiros:</strong> <code>head</code> aponta para: <br>
+                        "${topAction}" (O(1))
+                    </div>
                 </div>
             </c:if>
         </aside>

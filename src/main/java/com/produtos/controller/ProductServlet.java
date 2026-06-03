@@ -4,6 +4,7 @@ import com.produtos.model.Product;
 import com.produtos.model.User;
 import com.produtos.service.ProductService;
 import com.produtos.structures.CustomLinkedList;
+import com.produtos.structures.ProductQueue;
 import com.produtos.structures.ProductStack;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,7 +16,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
-@WebServlet(name = "ProductServlet", urlPatterns = {"/products", "/product-details", "/product-form", "/product-save", "/product-delete", "/product-favorite", "/api/search"})
+@WebServlet(name = "ProductServlet", urlPatterns = {"/products", "/product-details", "/product-form", "/product-save", "/product-delete", "/product-favorite", "/api/search", "/remove-search"})
 public class ProductServlet extends HttpServlet {
     private ProductService productService;
 
@@ -34,6 +35,9 @@ public class ProductServlet extends HttpServlet {
         switch (path) {
             case "/api/search":
                 apiSearch(request, response);
+                break;
+            case "/remove-search":
+                removeSearch(request, response);
                 break;
             case "/product-details":
                 showDetails(request, response);
@@ -54,6 +58,19 @@ public class ProductServlet extends HttpServlet {
                 listProducts(request, response);
                 break;
         }
+    }
+
+    private void removeSearch(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String query = request.getParameter("query");
+        if (query != null) {
+            HttpSession session = request.getSession();
+            ProductQueue<String> recentSearches = (ProductQueue<String>) session.getAttribute("recentSearches");
+            if (recentSearches != null) {
+                recentSearches.remove(query);
+                session.setAttribute("recentSearches", recentSearches);
+            }
+        }
+        response.sendRedirect("products");
     }
 
     private void apiSearch(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -106,12 +123,22 @@ public class ProductServlet extends HttpServlet {
         String category = request.getParameter("category");
         List<Product> products;
         
+        HttpSession session = request.getSession();
+
         // --- APLICAÇÃO DE ÁRVORE BINÁRIA DE BUSCA (BST) ---
         // A BST permite buscar por nome ou filtrar por categoria com complexidade O(log n).
         // Isso é muito mais eficiente do que percorrer uma lista do banco de dados manualmente.
         if (query != null && !query.trim().isEmpty()) {
             products = productService.searchProducts(query);
             request.setAttribute("searchQuery", query);
+
+            // --- LOG DE PESQUISAS RECENTES (FILA) ---
+            // A Fila (FIFO) garante que as pesquisas antigas saiam primeiro conforme o limite é atingido.
+            ProductQueue<String> recentSearches = (ProductQueue<String>) session.getAttribute("recentSearches");
+            if (recentSearches == null) recentSearches = new ProductQueue<>();
+            recentSearches.enqueue(query.trim());
+            if (recentSearches.size() > 5) recentSearches.dequeue();
+            session.setAttribute("recentSearches", recentSearches);
         } else if (category != null && !category.trim().isEmpty() && !category.equals("all")) {
             products = productService.filterProductsByCategory(category);
             request.setAttribute("selectedCategory", category);
@@ -122,11 +149,16 @@ public class ProductServlet extends HttpServlet {
         // Lista de categorias para o filtro
         request.setAttribute("categories", productService.getAllCategories());
         
-        HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         if (user != null) {
             Set<Integer> favoriteIds = productService.getFavoriteIds(user.getId());
             request.setAttribute("favoriteIds", favoriteIds);
+        }
+
+        // --- EXPOSIÇÃO DAS ESTRUTURAS PARA O JSP ---
+        ProductQueue<String> recentSearches = (ProductQueue<String>) session.getAttribute("recentSearches");
+        if (recentSearches != null) {
+            request.setAttribute("recentSearches", recentSearches.toList());
         }
 
         // --- MANIPULAÇÃO DA PILHA (STACK) E LISTA ENCADEADA ---
